@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analyzer Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind CSS configuration for custom theme properties
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif']
+                    },
+                    backgroundImage: {
+                        // Custom gradients for background and elements
+                        'gradient-to-br': 'linear-gradient(to bottom right, #667eea, #764ba2)',
+                        'gradient-button': 'linear-gradient(to right, #6b46c1, #805ad5)' // Purple to Indigo
+                    },
+                    colors: {
+                        primary: {
+                            500: '#667eea',
+                            600: '#5a67d8',
+                            700: '#4c51bf',
+                        },
+                        secondary: {
+                            500: '#764ba2',
+                            600: '#6b46c1',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Import the Inter font from Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Custom 'glass' effect for semi-transparent, blurred elements */
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        /* Gradient overlay for buttons to make them pop */
+        .btn-gradient {
+            background-image: linear-gradient(to right, #7b37ee 0%, #a4508b 51%, #7b37ee 100%);
+            background-size: 200% auto;
+            transition: 0.5s;
+        }
+        .btn-gradient:hover {
+            background-position: right center; /* change the direction of the change */
+            box-shadow: 0 4px 15px 0 rgba(118, 75, 162, 0.75);
+        }
+        /* Custom spinner for a more modern look */
+        .custom-spinner {
+            border-top-color: #805ad5; /* Tailwind purple-600 */
+            border-left-color: #805ad5;
+            border-right-color: transparent;
+            border-bottom-color: transparent;
+        }
+        /* Style for hidden file input */
+        input[type="file"] {
+            display: none;
+        }
+        /* Common style for content sections to be hidden by default */
+        .content-section {
+            display: none;
+        }
+        /* Ensure the active section is displayed */
+        .content-section.active {
+            display: grid; /* Use grid for main dashboard sections */
+        }
+        /* For other content sections like Reports, About, etc. */
+        .content-section.active.non-grid {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-700 to-blue-500 flex text-gray-800 antialiased">
+
+    <!-- Sidebar -->
+    <aside class="w-64 hidden md:flex flex-col bg-white/10 glass text-white shadow-xl rounded-r-3xl py-8 px-6 transition-all duration-300 ease-in-out">
+        <div class="text-3xl font-extrabold mb-8 text-center tracking-wide">
+            💬 SentimentAI
+        </div>
+        <nav class="space-y-6 text-base font-medium">
+            <a href="#" id="navDashboard" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-white/20 transition-all duration-200 ease-in-out transform hover:scale-105 active:bg-white/30">
+                <span class="text-xl">🏠</span><span>Dashboard</span>
+            </a>
+            <a href="#" id="navReports" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-white/20 transition-all duration-200 ease-in-out transform hover:scale-105">
+                <span class="text-xl">📈</span><span>Reports</span>
+            </a>
+            <a href="#" id="navAnalytics" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-white/20 transition-all duration-200 ease-in-out transform hover:scale-105">
+                <span class="text-xl">📊</span><span>Analytics</span>
+            </a>
+            <a href="#" id="navSettings" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-white/20 transition-all duration-200 ease-in-out transform hover:scale-105">
+                <span class="text-xl">⚙️</span><span>Settings</span>
+            </a>
+            <a href="#" id="navAbout" class="nav-link flex items-center space-x-3 p-3 rounded-lg hover:bg-white/20 transition-all duration-200 ease-in-out transform hover:scale-105">
+                <span class="text-xl">ℹ️</span><span>About</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col p-4 sm:p-6 md:p-8">
+        <!-- Topbar -->
+        <header class="w-full px-6 py-5 bg-white/10 glass rounded-2xl shadow-lg mb-8 flex items-center justify-between">
+            <h1 class="text-3xl font-extrabold text-white">🎬 Movie Review Analyzer</h1>
+            <div class="text-white text-lg font-medium hidden sm:block">Welcome, User!</div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section id="dashboardSection" class="content-section active grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 flex-grow">
+            <!-- Single Review Analyzer Card -->
+            <div class="bg-white/20 glass rounded-3xl shadow-xl p-8 flex flex-col justify-between transform hover:scale-[1.01] transition-transform duration-300 ease-in-out">
+                <h2 class="text-2xl font-bold text-white mb-6 text-center">Instant Sentiment Check</h2>
+                <p class="text-center text-lg text-white/90 mb-6">
+                    Type a <span class="font-semibold text-white">movie review</span> below and get its sentiment in seconds!
+                </p>
+
+                <textarea
+                    id="reviewInput"
+                    class="w-full p-4 rounded-xl border border-white/30 bg-white/10 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 text-base mb-6 resize-y shadow-inner transition-colors duration-200"
+                    rows="6"
+                    placeholder="e.g., 'Absolutely amazing storyline and visuals! This film is a must-watch and truly captivating from start to finish.'"
+                ></textarea>
+
+                <button
+                    id="analyzeButton"
+                    class="w-full btn-gradient text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-2xl transform transition text-xl tracking-wide flex items-center justify-center space-x-2"
+                >
+                    <span class="text-2xl">🔍</span> <span>Analyze Sentiment</span>
+                </button>
+
+                <!-- Loading Spinner -->
+                <div id="loadingIndicator" class="mt-6 text-center hidden">
+                    <div class="animate-spin inline-block w-12 h-12 border-4 custom-spinner rounded-full"></div>
+                    <p class="text-white mt-4 text-lg">Analyzing your review...</p>
+                </div>
+
+                <!-- Sentiment Result -->
+                <div id="resultContainer" class="mt-6 text-center hidden transition-all duration-300 ease-in-out">
+                    <p class="text-lg font-semibold text-white">Detected Sentiment:</p>
+                    <span id="sentimentResult" class="inline-block mt-4 text-2xl font-extrabold py-3 px-8 rounded-full shadow-lg transition-colors duration-300"></span>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorContainer" class="mt-6 hidden p-4 bg-red-800/60 border border-red-500 text-white rounded-lg shadow-md" role="alert">
+                    <p id="errorMessage" class="text-base text-center"></p>
+                </div>
+            </div>
+
+            <!-- Dashboard Overview / Batch Analysis Card -->
+            <div class="bg-white/20 glass rounded-3xl shadow-xl p-8 flex flex-col justify-between transform hover:scale-[1.01] transition-transform duration-300 ease-in-out">
+                <h2 class="text-2xl font-bold text-white mb-6 text-center">Batch Sentiment Analysis</h2>
+                <div class="flex-grow flex items-center justify-center flex-col text-white/80 text-center">
+                    <span class="text-5xl mb-4">📄</span>
+                    <p class="text-xl font-semibold mb-4">Upload a text file with reviews (one per line) for aggregate analysis.</p>
+
+                    <input type="file" id="fileInput" accept=".txt" class="hidden">
+                    <button id="uploadButton" class="mt-4 btn-gradient text-white font-semibold py-2 px-6 rounded-xl shadow-md hover:shadow-lg transition transform hover:scale-105">
+                        Choose File
+                    </button>
+                    <p id="fileName" class="text-white/70 mt-2 text-sm">No file chosen</p>
+
+                    <button id="analyzeBatchButton" class="mt-6 btn-gradient text-white font-semibold py-2 px-6 rounded-xl shadow-md hover:shadow-lg transition transform hover:scale-105 hidden">
+                        Analyze Batch Reviews
+                    </button>
+
+                    <!-- Loading Spinner for Batch Analysis -->
+                    <div id="batchLoadingIndicator" class="mt-6 text-center hidden">
+                        <div class="animate-spin inline-block w-12 h-12 border-4 custom-spinner rounded-full"></div>
+                        <p class="text-white mt-4 text-lg">Analyzing batch...</p>
+                    </div>
+
+                    <!-- Batch Analysis Results -->
+                    <div id="batchResultContainer" class="mt-6 w-full hidden text-left bg-white/10 rounded-lg p-4 shadow-inner">
+                        <p class="text-lg font-semibold text-white mb-2">Sentiment Distribution:</p>
+                        <ul class="text-white text-base space-y-1">
+                            <li>Positive: <span id="positiveCount" class="font-bold text-green-300">0</span></li>
+                            <li>Negative: <span id="negativeCount" class="font-bold text-red-300">0</span></li>
+                            <li>Neutral: <span id="neutralCount" class="font-bold text-yellow-300">0</span></li>
+                            <li>Errors: <span id="errorCount" class="font-bold text-gray-300">0</span></li>
+                            <li>Total Processed: <span id="totalProcessedCount" class="font-bold">0</span></li>
+                        </ul>
+                    </div>
+
+                    <!-- Error Message for Batch Analysis -->
+                    <div id="batchErrorContainer" class="mt-6 hidden p-4 bg-red-800/60 border border-red-500 text-white rounded-lg shadow-md" role="alert">
+                        <p id="batchErrorMessage" class="text-base text-center"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reportsSection" class="content-section flex-grow flex items-center justify-center">
+            <div class="bg-white/20 glass rounded-3xl shadow-xl p-8 max-w-2xl text-center text-white">
+                <span class="text-6xl mb-4 block">🚧</span>
+                <h2 class="text-3xl font-bold mb-4">Reports Coming Soon!</h2>
+                <p class="text-lg">This section will feature detailed sentiment reports and visualizations over time.</p>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analyticsSection" class="content-section flex-grow flex items-center justify-center">
+            <div class="bg-white/20 glass rounded-3xl shadow-xl p-8 max-w-2xl text-center text-white">
+                <span class="text-6xl mb-4 block">📈</span>
+                <h2 class="text-3xl font-bold mb-4">Advanced Analytics Under Construction!</h2>
+                <p class="text-lg">Stay tuned for in-depth sentiment analytics and trend insights.</p>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settingsSection" class="content-section flex-grow flex items-center justify-center">
+            <div class="bg-white/20 glass rounded-3xl shadow-xl p-8 max-w-2xl text-center text-white">
+                <span class="text-6xl mb-4 block">⚙️</span>
+                <h2 class="text-3xl font-bold mb-4">Settings Page</h2>
+                <p class="text-lg">Customize your SentimentAI experience here (features coming soon).</p>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="aboutSection" class="content-section flex-grow flex items-center justify-center">
+            <div class="bg-white/20 glass rounded-3xl shadow-xl p-8 max-w-2xl text-center text-white">
+                <span class="text-6xl mb-4 block">👋</span>
+                <h2 class="text-3xl font-bold mb-4">About SentimentAI</h2>
+                <p class="text-lg mb-2">This application was made by **Omkar**.</p>
+                <p class="text-lg">For contact or inquiries, please reach out to: <a href="mailto:omkarok25@gmail.com" class="text-blue-200 hover:underline">omkarok25@gmail.com</a></p>
+                <p class="text-base mt-4 text-white/70">Powered by Gemini AI and Flask.</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-white/70 text-sm">
+            <p>&copy; 2024 SentimentAI. All rights reserved.</p>
+        </footer>
+    </main>
+
+    <!-- JavaScript for Sentiment Analysis Interaction and Navigation -->
+    <script>
+        // DOM elements for single review analysis
+        const reviewInput = document.getElementById('reviewInput');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultContainer = document.getElementById('resultContainer');
+        const sentimentResult = document.getElementById('sentimentResult');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // DOM elements for batch analysis
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const fileNameSpan = document.getElementById('fileName');
+        const analyzeBatchButton = document.getElementById('analyzeBatchButton');
+        const batchLoadingIndicator = document.getElementById('batchLoadingIndicator');
+        const batchResultContainer = document.getElementById('batchResultContainer');
+        const positiveCountSpan = document.getElementById('positiveCount');
+        const negativeCountSpan = document.getElementById('negativeCount');
+        const neutralCountSpan = document.getElementById('neutralCount');
+        const errorCountSpan = document.getElementById('errorCount');
+        const totalProcessedCountSpan = document.getElementById('totalProcessedCount');
+        const batchErrorContainer = document.getElementById('batchErrorContainer');
+        const batchErrorMessage = document.getElementById('batchErrorMessage');
+
+        // DOM elements for navigation and sections
+        const navLinks = document.querySelectorAll('.nav-link');
+        const contentSections = document.querySelectorAll('.content-section');
+        const dashboardSection = document.getElementById('dashboardSection');
+        const reportsSection = document.getElementById('reportsSection');
+        const analyticsSection = document.getElementById('analyticsSection');
+        const settingsSection = document.getElementById('settingsSection');
+        const aboutSection = document.getElementById('aboutSection');
+
+
+        // Helper function to display an error message for single analysis
+        function showErrorMessage(msg) {
+            errorMessage.textContent = msg;
+            errorContainer.classList.remove('hidden');
+            loadingIndicator.classList.add('hidden');
+        }
+
+        // Helper function to hide all messages for single analysis
+        function hideAllMessages() {
+            resultContainer.classList.add('hidden');
+            loadingIndicator.classList.add('hidden');
+            errorContainer.classList.add('hidden');
+        }
+
+        // Helper function to display an error message for batch analysis
+        function showBatchErrorMessage(msg) {
+            batchErrorMessage.textContent = msg;
+            batchErrorContainer.classList.remove('hidden');
+            batchLoadingIndicator.classList.add('hidden');
+        }
+
+        // Helper function to hide all messages for batch analysis
+        function hideAllBatchMessages() {
+            batchResultContainer.classList.add('hidden');
+            batchLoadingIndicator.classList.add('hidden');
+            batchErrorContainer.classList.add('hidden');
+        }
+
+        // Function to show a specific content section and hide others
+        function showSection(sectionId) {
+            contentSections.forEach(section => {
+                section.classList.remove('active');
+                // Ensure non-grid sections are hidden correctly
+                if (section.id !== 'dashboardSection') {
+                    section.classList.add('hidden');
+                }
+            });
+
+            const targetSection = document.getElementById(sectionId);
+            targetSection.classList.add('active');
+            // For non-grid sections, remove 'hidden'
+            if (sectionId !== 'dashboardSection') {
+                targetSection.classList.remove('hidden');
+                targetSection.classList.add('non-grid'); // Add specific class for non-grid styling
+            } else {
+                 targetSection.classList.remove('non-grid');
+            }
+
+            // Also hide any active error/result messages from other sections when navigating
+            hideAllMessages();
+            hideAllBatchMessages();
+        }
+
+        // Add click listeners to navigation links
+        navLinks.forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault(); // Prevent default link behavior (page reload)
+                const sectionId = link.id.replace('nav', '').toLowerCase() + 'Section';
+                showSection(sectionId);
+            });
+        });
+
+        // Initialize by showing the dashboard section when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('dashboardSection');
+        });
+
+
+        // --- Single Review Analysis Logic ---
+        analyzeButton.addEventListener('click', async () => {
+            hideAllMessages(); // Clear previous states for single analysis
+
+            const reviewText = reviewInput.value.trim();
+
+            if (reviewText === '') {
+                showErrorMessage('Please enter a movie review to analyze.');
+                return;
+            }
+
+            loadingIndicator.classList.remove('hidden'); // Show loading indicator
+
+            try {
+                // Corrected to use absolute URL
+                const backendApiUrl = 'http://127.0.0.1:5000/analyze_sentiment';
+
+                const response = await fetch(backendApiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ review_text: reviewText })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || response.statusText);
+                }
+
+                const result = await response.json();
+
+                if (result && result.sentiment) {
+                    const sentiment = result.sentiment.toLowerCase().trim();
+
+                    sentimentResult.textContent = sentiment.charAt(0).toUpperCase() + sentiment.slice(1);
+                    resultContainer.classList.remove('hidden');
+
+                    // Apply color and background based on sentiment
+                    if (sentiment.includes('positive')) {
+                        sentimentResult.className = 'inline-block mt-4 text-2xl font-extrabold py-3 px-8 rounded-full shadow-lg bg-green-500/80 text-white';
+                    } else if (sentiment.includes('negative')) {
+                        sentimentResult.className = 'inline-block mt-4 text-2xl font-extrabold py-3 px-8 rounded-full shadow-lg bg-red-500/80 text-white';
+                    } else { // Neutral or unknown
+                        sentimentResult.className = 'inline-block mt-4 text-2xl font-extrabold py-3 px-8 rounded-full shadow-lg bg-yellow-500/80 text-white';
+                    }
+
+                } else {
+                    showErrorMessage('Could not get sentiment from the backend. Unexpected response format.');
+                }
+
+            } catch (error) {
+                console.error("Sentiment analysis error:", error);
+                showErrorMessage(`Failed to analyze sentiment: ${error.message}. Please check your input or ensure the backend is running.`);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+
+        // --- Batch Review Analysis Logic ---
+
+        // Trigger file input click when "Choose File" button is clicked
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Update file name display when a file is selected
+        fileInput.addEventListener('change', () => {
+            hideAllBatchMessages(); // Clear any previous batch messages
+            if (fileInput.files.length > 0) {
+                fileNameSpan.textContent = fileInput.files[0].name;
+                analyzeBatchButton.classList.remove('hidden'); // Show "Analyze Batch" button
+            } else {
+                fileNameSpan.textContent = 'No file chosen';
+                analyzeBatchButton.classList.add('hidden'); // Hide "Analyze Batch" button
+            }
+        });
+
+        // Event listener for "Analyze Batch Reviews" button
+        analyzeBatchButton.addEventListener('click', async () => {
+            hideAllBatchMessages(); // Clear previous states for batch analysis
+
+            if (fileInput.files.length === 0) {
+                showBatchErrorMessage('Please select a file to analyze.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            batchLoadingIndicator.classList.remove('hidden'); // Show batch loading indicator
+
+            reader.onload = async (e) => {
+                const textContent = e.target.result;
+                // Split reviews by newline, filter out empty lines
+                const reviews = textContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+                if (reviews.length === 0) {
+                    showBatchErrorMessage('The selected file contains no reviews.');
+                    batchLoadingIndicator.classList.add('hidden');
+                    return;
+                }
+
+                try {
+                    // Corrected to use absolute URL
+                    const backendApiUrl = 'http://127.0.0.1:5000/analyze_bulk_reviews'; // Endpoint for bulk analysis
+
+                    const response = await fetch(backendApiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reviews: reviews })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || response.statusText);
+                    }
+
+                    const result = await response.json();
+
+                    if (result && result.sentiment_distribution) {
+                        positiveCountSpan.textContent = result.sentiment_distribution.positive || 0;
+                        negativeCountSpan.textContent = result.sentiment_distribution.negative || 0;
+                        neutralCountSpan.textContent = result.sentiment_distribution.neutral || 0;
+                        errorCountSpan.textContent = result.sentiment_distribution.error || 0;
+                        totalProcessedCountSpan.textContent = result.total_processed || 0;
+                        batchResultContainer.classList.remove('hidden');
+                    } else {
+                        showBatchErrorMessage('Could not get batch sentiment from the backend. Unexpected response format.');
+                    }
+
+                } catch (error) {
+                    console.error("Batch analysis error:", error);
+                    showBatchErrorMessage(`Failed to analyze batch: ${error.message}. Please check file content or backend.`);
+                } finally {
+                    batchLoadingIndicator.classList.add('hidden');
+                }
+            };
+
+            reader.onerror = () => {
+                showBatchErrorMessage('Error reading file.');
+                batchLoadingIndicator.classList.add('hidden');
+            };
+
+            reader.readAsText(file); // Read the file as text
+        });
+    </script>
+</body>
+</html>
